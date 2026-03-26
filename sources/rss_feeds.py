@@ -1,10 +1,19 @@
-import feedparser
 import requests
+from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from typing import List
 
-from config import RSS_FEEDS
 from db.database import is_job_seen, mark_job_seen
+
+SECRET_TELAVIV_URL = "https://jobs.secrettelaviv.com/"
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
+}
 
 
 @dataclass
@@ -16,75 +25,56 @@ class Job:
     summary: str
 
 
-def _extract_title_company(raw_title: str):
-    """
-    Best-effort extraction of job title and company from an RSS entry title.
-    Handles multiple formats:
-      - "Title at Company"  (LinkedIn-style)
-      - "Title - Company"   (Indeed-style)
-      - "Title"             (WordPress / Secret Tel Aviv — company in summary)
-    """
-    if " at " in raw_title:
-        parts = raw_title.split(" at ", 1)
-        return parts[0].strip(), parts[1].strip()
-    if " - " in raw_title:
-        parts = raw_title.rsplit(" - ", 1)
-        return parts[0].strip(), parts[1].strip()
-    return raw_title.strip(), ""
-
-
-def _parse_feed(feed_url: str) -> List[Job]:
-    """Fetch and parse a single RSS feed URL."""
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/120.0.0.0 Safari/537.36"
-        )
-    }
+def _scrape_secret_telaviv() -> List[Job]:
+    """Scrape job listings from jobs.secrettelaviv.com."""
     try:
-        response = requests.get(feed_url, headers=headers, timeout=15)
+        response = requests.get(SECRET_TELAVIV_URL, headers=HEADERS, timeout=15)
         response.raise_for_status()
     except requests.RequestException as e:
-        print(f"[RSS] Failed to fetch feed {feed_url}: {e}")
+        print(f"[Scraper] Failed to fetch Secret Tel Aviv Jobs: {e}")
         return []
 
-    feed = feedparser.parse(response.content)
+    soup = BeautifulSoup(response.text, "html.parser")
+    rows = soup.select("div.wpjb-grid-row")
     jobs = []
 
-    for entry in feed.entries:
-        url = entry.get("link", "").strip()
-        raw_title = entry.get("title", "").strip()
-        summary = entry.get("summary", "").strip()
+    for row in rows:
+        # Title + URL
+        title_tag = row.select_one("span.wpjb-line-major a")
+        if not title_tag:
+            continue
+        url = title_tag.get("href", "").strip()
+        title = title_tag.get_text(strip=True)
 
-        title, company = _extract_title_company(raw_title)
+        # Company
+        company_tag = row.select_one("span.wpjb-sub.wpjb-sub-small")
+        company = company_tag.get_text(strip=True) if company_tag else ""
 
-        location = ""
-        if hasattr(entry, "location"):
-            location = entry.location
+        # Location
+        location_tag = row.select_one("span.wpjb-glyphs")
+        location = location_tag.get_text(strip=True) if location_tag else ""
 
         if url:
-            jobs.append(Job(url=url, title=title, company=company, location=location, summary=summary))
+            jobs.append(Job(url=url, title=title, company=company, location=location, summary=""))
 
     return jobs
 
 
 def fetch_new_jobs() -> List[Job]:
     """
-    Poll all configured RSS feeds.
+    Scrape Secret Tel Aviv Jobs.
     Returns only jobs not yet seen (deduped via DB).
     Marks new jobs as seen before returning.
     """
+    jobs = _scrape_secret_telaviv()
     new_jobs = []
 
-    for feed_url in RSS_FEEDS:
-        jobs = _parse_feed(feed_url)
-        for job in jobs:
-            if not is_job_seen(job.url):
-                mark_job_seen(job.url, title=job.title, company=job.company)
-                new_jobs.append(job)
+    for job in jobs:
+        if not is_job_seen(job.url):
+            mark_job_seen(job.url, title=job.title, company=job.company)
+            new_jobs.append(job)
 
-    print(f"[RSS] Found {len(new_jobs)} new jobs across {len(RSS_FEEDS)} feeds.")
+    print(f"[Scraper] Found {len(new_jobs)} new jobs out of {len(jobs)} total listings.")
     return new_jobs
 
 
@@ -93,4 +83,4 @@ if __name__ == "__main__":
     init_db()
     jobs = fetch_new_jobs()
     for job in jobs:
-        print(f"  - {job.title} @ {job.company} | {job.url[:80]}")
+        print(f"  - {job.title} @ {job.company} | {job.location}")

@@ -19,10 +19,7 @@ Skills: Python, backend systems, APIs, databases
 Strong interest in: AI/ML engineering roles
 """
 
-RSS_FEEDS = [
-    "https://jobs.secrettelaviv.com/feed/",
-]
 
-RSS_POLL_INTERVAL_HOURS = 3
+RSS_POLL_INTERVAL_HOURS = 24
 DAILY_TIP_HOUR = 9  # 9am Israel time (Asia/Jerusalem)
 FOLLOW_UP_DAYS = 7
