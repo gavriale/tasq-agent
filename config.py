@@ -20,12 +20,7 @@ Strong interest in: AI/ML engineering roles
 """
 
 RSS_FEEDS = [
-    # Secret Tel Aviv Jobs — Israel-focused, English-speaking market
     "https://jobs.secrettelaviv.com/feed/",
-    # RemoteOK — remote roles (backend, Python, AI); Claude filters for relevance
-    "https://remoteok.com/remote-backend-jobs.rss",
-    "https://remoteok.com/remote-python-jobs.rss",
-    "https://remoteok.com/remote-ai-jobs.rss",
 ]
 
 RSS_POLL_INTERVAL_HOURS = 3
