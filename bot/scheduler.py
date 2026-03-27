@@ -11,25 +11,33 @@ from sources.rss_feeds import fetch_new_jobs
 
 logger = logging.getLogger(__name__)
 
-# Keywords that suggest a relevant role
+# Titles that are clearly relevant
 INCLUDE_KEYWORDS = [
     "backend", "back-end", "back end",
-    "python", "software engineer", "software developer",
     "full stack", "fullstack", "full-stack",
-    "ai engineer", "ml engineer", "machine learning",
-    "platform engineer", "infrastructure engineer",
-    "api", "node", "django", "fastapi", "flask",
+    "software engineer", "software developer",
+    "python", "java ", "java developer", "java engineer",
+    "spring", "fastapi", ".net", "c# ",
+    "platform engineer", "platform developer",
+    "api developer", "api engineer",
+    "server side", "server-side",
 ]
 
-# Keywords that disqualify a role immediately
+# Titles that disqualify immediately
 EXCLUDE_KEYWORDS = [
+    # Wrong seniority
+    "principal", "staff engineer", "distinguished", "vp ", "director",
+    # Wrong domain
+    "embedded", "firmware", "kernel", "driver", "c++ ", "c/c++",
+    "data scientist", "ml engineer", "machine learning engineer", "research engineer",
+    "devops engineer", "sre ", "site reliability", "infrastructure engineer",
+    # Non-engineering
     "frontend", "front-end", "front end",
-    "qa ", "quality assurance", "test engineer",
-    "devops", "sre ", "site reliability",
-    "designer", "ux ", "ui ", "graphic",
-    "marketing", "sales", "hr ", "recruiter",
+    "qa ", "quality assurance", "test engineer", "automation engineer",
+    "designer", "ux ", "ui/ux",
+    "marketing", "sales", "recruiter", "hr ", "talent",
     "finance", "accounting", "legal", "analyst",
-    "data analyst", "business analyst",
+    "manager", "team lead", "tech lead",
 ]
 
 
