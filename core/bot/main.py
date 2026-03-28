@@ -7,7 +7,7 @@ from core.config import TELEGRAM_BOT_TOKEN
 from core.db.database import init_db
 from core.scheduler import build_scheduler
 from modules.jobs.handlers import register_handlers as jobs_handlers
-# from modules.cars.handlers import register_handlers as cars_handlers  # uncomment when ready
+from modules.cars.handlers import register_handlers as cars_handlers
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -26,7 +26,7 @@ def main():
 
     # Register handlers from all active modules
     jobs_handlers(app)
-    # cars_handlers(app)  # uncomment when ready
+    cars_handlers(app)
 
     chat_id_str = os.getenv("TELEGRAM_CHAT_ID")
     if chat_id_str:

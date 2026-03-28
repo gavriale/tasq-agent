@@ -39,6 +39,11 @@ def init_db():
                 date TEXT UNIQUE NOT NULL,
                 tokens_used INTEGER NOT NULL DEFAULT 0
             );
+
+            CREATE TABLE IF NOT EXISTS seen_cars (
+                token TEXT PRIMARY KEY,
+                seen_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
         """)
 
 
@@ -108,6 +113,22 @@ def increment_token_usage(tokens: int):
             """INSERT INTO token_usage (date, tokens_used) VALUES (?, ?)
                ON CONFLICT(date) DO UPDATE SET tokens_used = tokens_used + excluded.tokens_used""",
             (today, tokens),
+        )
+
+
+# --- Seen cars (dedup) ---
+
+def is_car_seen(token: str) -> bool:
+    with get_connection() as conn:
+        row = conn.execute("SELECT 1 FROM seen_cars WHERE token = ?", (token,)).fetchone()
+        return row is not None
+
+
+def mark_car_seen(token: str):
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO seen_cars (token) VALUES (?)",
+            (token,),
         )
 
 
